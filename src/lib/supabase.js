@@ -1,15 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Retrieve credentials from environment or browser runtime storage
+// Clean and normalize Supabase project URL (strips trailing slashes and unintended /rest/v1 paths)
+function normalizeSupabaseUrl(rawUrl) {
+  if (!rawUrl) return '';
+  let cleanUrl = String(rawUrl).trim().replace(/\/+$/, '');
+  cleanUrl = cleanUrl.replace(/\/rest\/v1\/?$/, '');
+  return cleanUrl;
+}
+
+// Retrieve credentials from environment (or runtime storage fallback)
 function getCredentials() {
   const envUrl = import.meta.env.VITE_SUPABASE_URL;
-  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  // Support both VITE_SUPABASE_PUBLISHABLE_KEY and legacy VITE_SUPABASE_ANON_KEY
+  const envKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   const storageUrl = typeof window !== 'undefined' ? localStorage.getItem('smart_taxi_supabase_url') : null;
   const storageKey = typeof window !== 'undefined' ? localStorage.getItem('smart_taxi_supabase_anon_key') : null;
 
-  const url = storageUrl || envUrl || '';
-  const key = storageKey || envKey || '';
+  const rawUrl = storageUrl || envUrl || '';
+  const key = (storageKey || envKey || '').trim();
+  const url = normalizeSupabaseUrl(rawUrl);
 
   const isConfigured = 
     Boolean(url) && 
@@ -52,7 +62,8 @@ export function getStoredConfig() {
 
 export function saveCredentials(url, key) {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('smart_taxi_supabase_url', url.trim());
+    const cleanUrl = normalizeSupabaseUrl(url);
+    localStorage.setItem('smart_taxi_supabase_url', cleanUrl);
     localStorage.setItem('smart_taxi_supabase_anon_key', key.trim());
     supabaseInstance = null; // force recreate
   }
@@ -66,4 +77,5 @@ export function clearCredentials() {
   }
 }
 
+// Default exported client instance
 export const supabase = getSupabase();

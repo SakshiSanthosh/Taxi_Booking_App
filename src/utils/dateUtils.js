@@ -184,3 +184,4 @@ export function checkBookingOverlap(newStartISO, newEndISO, bookings, excludeId 
     conflicts
   };
 }
+

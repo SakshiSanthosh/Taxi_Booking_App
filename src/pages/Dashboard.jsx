@@ -11,7 +11,8 @@ import {
   Car, 
   AlertCircle,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  Inbox
 } from 'lucide-react';
 import { useBookings } from '../context/BookingContext';
 import { formatDateTime, formatTime, getTripDuration } from '../utils/dateUtils';
@@ -36,6 +37,32 @@ export default function Dashboard({ onNavigate }) {
     <div className="space-y-6">
       {/* Notifications & Reminders Banner */}
       <NotificationBanner onSelectBooking={(b) => setSelectedBooking(b)} />
+
+      {/* Pending Customer Inquiries Alert */}
+      {metrics.pendingRequestsCount > 0 && (
+        <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/40 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-amber-500 text-slate-950 font-bold">
+              <Inbox className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 block">
+                {metrics.pendingRequestsCount} New Online Request{metrics.pendingRequestsCount > 1 ? 's' : ''} Pending
+              </span>
+              <p className="text-sm font-bold text-white">
+                Passengers submitted ride requests awaiting your review and fare quote.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate('requests')}
+            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20 self-end sm:self-auto touch-target"
+          >
+            <span>Review Requests</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Hero / Quick Actions Row */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-br from-slate-900 to-slate-900/60 p-6 rounded-3xl border border-slate-800 shadow-xl">
@@ -322,3 +349,4 @@ export default function Dashboard({ onNavigate }) {
     </div>
   );
 }
+

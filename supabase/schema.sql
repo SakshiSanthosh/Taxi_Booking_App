@@ -148,3 +148,4 @@ $$;
 
 -- Grant execution to authenticated users
 GRANT EXECUTE ON FUNCTION public.check_taxi_availability TO authenticated;
+

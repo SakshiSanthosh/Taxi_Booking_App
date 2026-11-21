@@ -1,10 +1,10 @@
 /**
  * Offline / Demo Mode Storage for Smart Taxi Manager
- * Used when Supabase credentials are not configured yet, so the driver/evaluator
- * can test every feature immediately without a broken UI.
+ * Supports both bookings and customer booking_requests
  */
 
 const STORAGE_KEY = 'smart_taxi_demo_bookings';
+const REQUESTS_STORAGE_KEY = 'smart_taxi_demo_requests';
 
 const INITIAL_DEMO_BOOKINGS = [
   {
@@ -14,8 +14,8 @@ const INITIAL_DEMO_BOOKINGS = [
     customer_phone: '+91 98765 43210',
     pickup_location: 'Airport Terminal 2, Mumbai',
     drop_location: 'BKC Business Center, Bandra',
-    start_at: new Date(Date.now() + 3600 * 1000 * 2).toISOString(), // 2 hours from now
-    end_at: new Date(Date.now() + 3600 * 1000 * 4).toISOString(),   // 4 hours from now
+    start_at: new Date(Date.now() + 3600 * 1000 * 2).toISOString(),
+    end_at: new Date(Date.now() + 3600 * 1000 * 4).toISOString(),
     fare: 1450,
     advance_amount: 500,
     status: 'confirmed',
@@ -29,7 +29,7 @@ const INITIAL_DEMO_BOOKINGS = [
     customer_phone: '+91 91234 56789',
     pickup_location: 'Andheri West Metro Station',
     drop_location: 'Colaba Causeway, Fort',
-    start_at: new Date(Date.now() + 86400 * 1000 * 1 + 3600 * 1000 * 3).toISOString(), // Tomorrow morning
+    start_at: new Date(Date.now() + 86400 * 1000 * 1 + 3600 * 1000 * 3).toISOString(),
     end_at: new Date(Date.now() + 86400 * 1000 * 1 + 3600 * 1000 * 5).toISOString(),
     fare: 1800,
     advance_amount: 1800,
@@ -44,7 +44,7 @@ const INITIAL_DEMO_BOOKINGS = [
     customer_phone: '+91 99887 76655',
     pickup_location: 'Dadar Central Station',
     drop_location: 'Thane West Ghodbunder Rd',
-    start_at: new Date(Date.now() + 86400 * 1000 * 2 + 3600 * 1000 * 4).toISOString(), // Day after tomorrow
+    start_at: new Date(Date.now() + 86400 * 1000 * 2 + 3600 * 1000 * 4).toISOString(),
     end_at: new Date(Date.now() + 86400 * 1000 * 2 + 3600 * 1000 * 7).toISOString(),
     fare: 1200,
     advance_amount: 300,
@@ -59,7 +59,7 @@ const INITIAL_DEMO_BOOKINGS = [
     customer_phone: '+91 98111 22334',
     pickup_location: 'Lilavati Hospital, Bandra',
     drop_location: 'Juhu Tara Road',
-    start_at: new Date(Date.now() - 86400 * 1000 * 2).toISOString(), // 2 days ago
+    start_at: new Date(Date.now() - 86400 * 1000 * 2).toISOString(),
     end_at: new Date(Date.now() - 86400 * 1000 * 2 + 3600 * 1000 * 2).toISOString(),
     fare: 650,
     advance_amount: 650,
@@ -81,6 +81,33 @@ const INITIAL_DEMO_BOOKINGS = [
     status: 'cancelled',
     notes: 'Client cancelled train ticket.',
     created_at: new Date(Date.now() - 86400 * 1000 * 2).toISOString(),
+  }
+];
+
+const INITIAL_DEMO_REQUESTS = [
+  {
+    id: 'req-demo-1',
+    customer_name: 'Karan Mehra',
+    customer_phone: '+91 98222 33445',
+    pickup_location: 'Chhatrapati Shivaji Terminal (CST)',
+    drop_location: 'Navi Mumbai Vashi Plaza',
+    start_at: new Date(Date.now() + 86400 * 1000 * 3 + 3600 * 1000 * 2).toISOString(),
+    end_at: new Date(Date.now() + 86400 * 1000 * 3 + 3600 * 1000 * 4).toISOString(),
+    notes: 'Need receipt for business reimbursement.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 3600 * 1000 * 3).toISOString(),
+  },
+  {
+    id: 'req-demo-2',
+    customer_name: 'Anjali Deshmukh',
+    customer_phone: '+91 97333 44556',
+    pickup_location: 'Goregaon East Nesco Center',
+    drop_location: 'Lower Parel Phoenix Mall',
+    start_at: new Date(Date.now() + 86400 * 1000 * 4 + 3600 * 1000 * 5).toISOString(),
+    end_at: new Date(Date.now() + 86400 * 1000 * 4 + 3600 * 1000 * 7).toISOString(),
+    notes: 'Family trip, 3 passengers.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 3600 * 1000 * 1).toISOString(),
   }
 ];
 
@@ -122,4 +149,43 @@ export function deleteMockBooking(id) {
   const current = getMockBookings();
   const updated = current.filter(b => b.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+}
+
+// Request helpers for Demo mode
+export function getMockRequests() {
+  try {
+    const raw = localStorage.getItem(REQUESTS_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(INITIAL_DEMO_REQUESTS));
+      return INITIAL_DEMO_REQUESTS;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    return INITIAL_DEMO_REQUESTS;
+  }
+}
+
+export function saveMockRequest(request) {
+  const current = getMockRequests();
+  const newReq = {
+    ...request,
+    id: request.id || `req-demo-${Date.now()}`,
+    status: 'pending',
+    created_at: new Date().toISOString(),
+  };
+  const updated = [newReq, ...current.filter(r => r.id !== newReq.id)];
+  localStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(updated));
+  return newReq;
+}
+
+export function updateMockRequestStatus(id, status, extra = {}) {
+  const current = getMockRequests();
+  const updated = current.map(r => r.id === id ? {
+    ...r,
+    status,
+    ...extra,
+    reviewed_at: new Date().toISOString()
+  } : r);
+  localStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(updated));
+  return updated.find(r => r.id === id);
 }

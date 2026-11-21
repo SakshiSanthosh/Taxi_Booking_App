@@ -350,3 +350,4 @@ export default function BookingCalendar({ onNavigate }) {
     </div>
   );
 }
+

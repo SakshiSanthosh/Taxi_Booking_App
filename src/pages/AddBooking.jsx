@@ -485,3 +485,4 @@ export default function AddBooking({ onBack, onSuccess, initialData = null, isEd
     </div>
   );
 }
+

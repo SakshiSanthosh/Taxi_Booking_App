@@ -126,3 +126,4 @@ To deploy to Vercel:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
 3. Click **Deploy**. The included `vercel.json` ensures client-side routing works smoothly.
+

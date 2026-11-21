@@ -414,3 +414,4 @@ export default function BookingHistory({ onNavigate }) {
     </div>
   );
 }
+

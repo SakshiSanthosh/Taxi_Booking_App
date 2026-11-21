@@ -8,12 +8,13 @@ import {
   ShieldCheck, 
   Settings, 
   Sparkles,
+  Globe,
   Info
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import SetupModal from '../components/SetupModal';
 
-export default function Login() {
+export default function Login({ onGoToCustomerPage }) {
   const { login, enterDemoMode, hasConfiguredSupabase } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +28,10 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      const res = await login(email, password);
+      if (res && res.isAdmin === false) {
+        setErrorMessage('Access Denied: This account is authenticated but not registered in public.admin_users.');
+      }
     } catch (err) {
       console.error('Login error:', err);
       setErrorMessage(err.message || 'Invalid email or password. Please try again.');
@@ -43,24 +47,38 @@ export default function Login() {
 
       <div className="w-full max-w-md relative z-10">
         {/* Brand Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/30 mb-4 ring-8 ring-amber-500/10">
             <Car className="w-9 h-9" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Smart Taxi Manager
           </h1>
-          <p className="text-sm text-slate-400 mt-1.5">
-            Single-Driver Booking &amp; Availability Portal
+          <p className="text-sm text-slate-400 mt-1">
+            Single-Driver Dispatch &amp; Availability Portal
           </p>
         </div>
+
+        {/* Public Customer Booking Switch Pill */}
+        {onGoToCustomerPage && (
+          <div className="mb-4 text-center">
+            <button
+              type="button"
+              onClick={onGoToCustomerPage}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-amber-400 hover:text-amber-300 text-xs font-bold border border-slate-800 shadow-lg transition touch-target"
+            >
+              <Globe className="w-4 h-4 text-amber-400" />
+              <span>Are you a passenger? Book a Taxi here</span>
+            </button>
+          </div>
+        )}
 
         {/* Login Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
           <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-800">
             <div>
-              <h2 className="text-lg font-bold text-white">Owner Sign In</h2>
-              <p className="text-xs text-slate-400">Enter your credentials to manage your car</p>
+              <h2 className="text-lg font-bold text-white">Owner &amp; Driver Sign In</h2>
+              <p className="text-xs text-slate-400">Restricted administrative access only</p>
             </div>
             <button
               onClick={() => setShowSetup(true)}
@@ -73,7 +91,7 @@ export default function Login() {
 
           {errorMessage && (
             <div className="mb-5 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs sm:text-sm flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-400" />
               <span>{errorMessage}</span>
             </div>
           )}
@@ -148,7 +166,7 @@ export default function Login() {
               <span>Explore Demo Driver Account</span>
             </button>
             <p className="text-[11px] text-slate-500 text-center mt-2">
-              Instantly inspect the complete UI with pre-loaded sample trips.
+              Inspect all admin features, requests, and calendar in demo mode.
             </p>
           </div>
         </div>

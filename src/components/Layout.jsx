@@ -12,18 +12,32 @@ import {
   Menu, 
   X,
   PhoneCall,
-  Clock
+  Clock,
+  Inbox,
+  ExternalLink,
+  Globe
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useBookings } from '../context/BookingContext';
 import SetupModal from './SetupModal';
 
-export default function Layout({ activePage, setActivePage, children }) {
+export default function Layout({ activePage, setActivePage, onOpenCustomerView, children }) {
   const { user, logout, isDemoMode, hasConfiguredSupabase } = useAuth();
+  const { metrics } = useBookings();
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const pendingCount = metrics?.pendingRequestsCount || 0;
+
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { 
+      id: 'requests', 
+      label: 'Customer Requests', 
+      icon: Inbox, 
+      badge: pendingCount > 0 ? String(pendingCount) : null,
+      isAlert: pendingCount > 0 
+    },
     { id: 'availability', label: 'Check Availability', icon: CalendarCheck, badge: 'Key' },
     { id: 'add-booking', label: 'Add Booking', icon: PlusCircle },
     { id: 'calendar', label: 'Monthly Calendar', icon: CalendarIcon },
@@ -41,7 +55,7 @@ export default function Layout({ activePage, setActivePage, children }) {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 lg:w-72 bg-slate-900 border-r border-slate-800 p-5 sticky top-0 h-screen select-none">
         {/* App Brand */}
-        <div className="flex items-center gap-3 px-2 py-3 mb-6">
+        <div className="flex items-center gap-3 px-2 py-3 mb-4">
           <div className="w-11 h-11 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/25">
             <Car className="w-6 h-6" />
           </div>
@@ -51,13 +65,28 @@ export default function Layout({ activePage, setActivePage, children }) {
             </h1>
             <div className="flex items-center gap-1.5 text-xs text-amber-400 font-medium">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              1 Car • Active
+              1 Car • Admin Desk
             </div>
           </div>
         </div>
 
+        {/* Public Customer Page Shortcut Button */}
+        {onOpenCustomerView && (
+          <button
+            onClick={onOpenCustomerView}
+            className="mb-4 w-full flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-xs text-amber-400 hover:text-amber-300 font-semibold transition group"
+            title="Open customer booking page"
+          >
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-amber-400" />
+              <span>Public Booking Page</span>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400 transition" />
+          </button>
+        )}
+
         {/* Database Status Tag */}
-        <div className="mb-6 px-3 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+        <div className="mb-4 px-3 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
           <div className="text-xs">
             <span className="text-slate-400 block text-[11px] font-semibold uppercase tracking-wider">Storage</span>
             <span className={`font-semibold flex items-center gap-1 ${hasConfiguredSupabase ? 'text-emerald-400' : 'text-amber-400'}`}>
@@ -75,7 +104,7 @@ export default function Layout({ activePage, setActivePage, children }) {
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 space-y-1.5">
+        <nav className="flex-1 space-y-1.5 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activePage === item.id;
@@ -93,8 +122,12 @@ export default function Layout({ activePage, setActivePage, children }) {
                   <Icon className={`w-5 h-5 ${isActive ? 'text-slate-950' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
                 </div>
-                {item.badge && !isActive && (
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                {item.badge && (
+                  <span className={`text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full ${
+                    item.isAlert
+                      ? isActive ? 'bg-slate-950 text-amber-400 font-black' : 'bg-rose-500 text-white animate-pulse'
+                      : isActive ? 'bg-slate-950 text-amber-400' : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                  }`}>
                     {item.badge}
                   </span>
                 )}
@@ -138,6 +171,15 @@ export default function Layout({ activePage, setActivePage, children }) {
           </div>
 
           <div className="flex items-center gap-2">
+            {onOpenCustomerView && (
+              <button
+                onClick={onOpenCustomerView}
+                className="p-2 text-amber-400 hover:text-white rounded-xl bg-slate-800 touch-target flex items-center justify-center"
+                title="Public Booking Page"
+              >
+                <Globe className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={() => setIsSetupOpen(true)}
               className="p-2 text-slate-300 hover:text-white rounded-xl bg-slate-800 touch-target flex items-center justify-center"
@@ -179,22 +221,29 @@ export default function Layout({ activePage, setActivePage, children }) {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation Bar (for single-hand touch phone usage) */}
+      {/* Mobile Bottom Navigation Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-2 py-1.5 flex items-center justify-around">
-        {navItems.map((item) => {
+        {navItems.slice(0, 5).map((item) => {
           const Icon = item.icon;
           const isActive = activePage === item.id;
           return (
             <button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
-              className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition flex-1 touch-target ${
+              className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition flex-1 touch-target ${
                 isActive ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? 'scale-110 text-amber-400' : ''}`} />
+              <div className="relative">
+                <Icon className={`w-5 h-5 ${isActive ? 'scale-110 text-amber-400' : ''}`} />
+                {item.badge && item.isAlert && (
+                  <span className="absolute -top-1.5 -right-2 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
+                    {item.badge}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] mt-1 tracking-tight truncate max-w-[65px]">
-                {item.id === 'availability' ? 'Check' : item.id === 'add-booking' ? 'Add' : item.label}
+                {item.id === 'requests' ? 'Requests' : item.id === 'availability' ? 'Check' : item.id === 'add-booking' ? 'Add' : item.label}
               </span>
             </button>
           );
